@@ -10,152 +10,221 @@ endif
 let s:cpo_save = &cpoptions
 set cpoptions&vim
 
+" Performance note: For large log files (>3000 lines), consider adding this
+" to your ~/.vimrc to prevent syntax highlighting timeout:
+"   autocmd FileType log setlocal redrawtime=10000
+
 
 " Operators
 "---------------------------------------------------------------------------
-syn match logOperator display '[;,\?\:\.\<=\>\~\/\@\!$\%&\+\-\|\^(){}\*#]'
+syn match logOperator display '[;,\?\.\<=\>\~\/\@\!$\%&\+\-\|\^(){}\*#]'
 syn match logBrackets display '[\[\]]'
 syn match logEmptyLines display '-\{3,}'
 syn match logEmptyLines display '\*\{3,}'
 syn match logEmptyLines display '=\{3,}'
-syn match logEmptyLines display '- - '
 
-
-" Constants
+" Numbers (integers and floats)
 "---------------------------------------------------------------------------
-syn match logNumber       '\<-\?\d\+\>'
-syn match logHexNumber    '\<0[xX]\x\+\>'
-syn match logHexNumber    '\<\d\x\+\>'
-syn match logBinaryNumber '\<0[bB][01]\+\>'
-syn match logFloatNumber  '\<\d.\d\+[eE]\?\>'
+syn match logNumber '\<-\?\d\+\>'
+syn match logNumber '\<-\?\d\+\.\d\+\>'
 
-syn keyword logBoolean    TRUE FALSE True False true false
-syn keyword logNull       NULL Null null
-
-syn region logString      start=/"/ end=/"/ end=/$/ skip=/\\./
-" Quoted strings, but no match on quotes like "don't", "plurals' elements"
-syn region logString      start=/'\(s \|t \| \w\)\@!/ end=/'/ end=/$/ end=/s / skip=/\\./
-
-
-" Dates and Times
+" Hexadecimal numbers
 "---------------------------------------------------------------------------
-" Matches 2018-03-12T or 12/03/2018 or 12/Mar/2018
+syn match logHexNumber display '0[xX][0-9a-fA-F]\+'
+
+" Boolean keywords
+"---------------------------------------------------------------------------
+syn keyword logBoolean true false yes no on off enabled disabled active inactive
+
+" Log level keywords
+"---------------------------------------------------------------------------
+syn keyword logLevelError ERROR FATAL FAILURE FAILED FAIL CRITICAL SEVERE SEVERE FATAL EXCEPTION
+syn keyword logLevelWarn WARN WARNING WRN
+syn keyword logLevelInfo INFO INFORMATION
+syn keyword logLevelDebug DEBUG DBG
+syn keyword logLevelTrace TRACE TRACING FINEST FINER
+
+" System log levels
+"---------------------------------------------------------------------------
+syn keyword logLevelEmerg EMERG
+syn keyword logLevelAlert ALERT
+syn keyword logLevelCrit CRIT
+syn keyword logLevelErr ERR
+syn keyword logLevelWarn WARN
+syn keyword logLevelNotice NOTICE
+syn keyword logLevelInfo INFO
+syn keyword logLevelDebug DEBUG
+
+" ===========================================================================
+" IP ADDRESS PATTERNS (IPv4 + IPv6)
+" Defined after logNumber, logOperator so these groups win on
+" overlapping positions (Vim last-definition-wins rule for syn match).
+" ===========================================================================
+
+" IPv4 plain addresses
+"---------------------------------------------------------------------------
+syn match logIpv4 '\<\d\{1,3}\.\d\{1,3}\.\d\{1,3}\.\d\{1,3}\>'
+
+" Pure IPv6 - Full 8-segment addresses (optionally followed by CIDR prefix /0-128)
+"---------------------------------------------------------------------------
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" Pure IPv6 - Compressed (all :: positions), longest first (CIDR prefix /0-128 supported)
+"---------------------------------------------------------------------------
+
+" 6 non-:: groups + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" 5 non-:: groups + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" 4 non-:: groups + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" 3 non-:: groups + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.\[0-9\]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" :: at start with 7, 6, 5, 4, 3, 2, 1 groups after
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|\[\)\@<=::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" 2 non-:: groups + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" 1 non-:: group + ::
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+" a::b and a::b:c forms
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+
+
+" URLs and file paths
+"---------------------------------------------------------------------------
+syn match logUrl '\(https\?://\|ftps\?://\|file://\)[^ \t]*'
+syn match logFilePath display '\(\~\|/\)[^ \t]*'
+
+" Dates (must be after logNumber to match date patterns first)
+"---------------------------------------------------------------------------
+" Matches 2018-03-12 or 12/03/2018 or 12/Mar/2018
 syn match logDate '\d\{2,4}[-\/]\(\d\{2}\|Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\)[-\/]\d\{2,4}T\?'
-" Matches 8 digit numbers at start of line starting with 20
+" Matches 8 digit numbers at start of line starting with 20 (e.g., 20260227)
 syn match logDate '^20\d\{6}'
-" Matches Fri Jan 09 or Feb 11 or Apr  3 or Sun 3
-syn keyword logDate Mon Tue Wed Thu Fri Sat Sun Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec nextgroup=logDateDay
-syn match logDateDay '\s\{1,2}\d\{1,2}' contained
 
+" Times (HH:MM:SS)
+"---------------------------------------------------------------------------
 " Matches 12:09:38 or 00:03:38.129Z or 01:32:12.102938 +0700
 syn match logTime '\d\{2}:\d\{2}:\d\{2}\(\.\d\{2,6}\)\?\(\s\?[-+]\d\{2,4}\|Z\)\?\>' nextgroup=logTimeZone,logSysColumns skipwhite
 
-" Follows logTime, matches UTC or PDT 2019 or 2019 EDT
+" Time Zone (follows logTime)
 syn match logTimeZone '[A-Z]\{2,5}\>\( \d\{4}\)\?' contained
 syn match logTimeZone '\d\{4} [A-Z]\{2,5}\>' contained
 
-
-" Entities
+" MAC addresses (defined after logTime so MAC wins over time on a full 6-group match)
 "---------------------------------------------------------------------------
-syn match logUrl        'http[s]\?:\/\/[^\n|,; '"]\+'
-syn match logDomain     /\v(^|\s)(\w|-)+(\.(\w|-)+)+\s/
-syn match logUUID       '\w\{8}-\w\{4}-\w\{4}-\w\{4}-\w\{12}'
-syn match logMD5        '\<[a-z0-9]\{32}\>'
-syn match logIPV4       '\<\d\{1,3}\(\.\d\{1,3}\)\{3}\>'
-syn match logIPV6       '\<\x\{1,4}\(:\x\{1,4}\)\{7}\>'
-syn match logMacAddress '\<\x\{2}\(:\x\{2}\)\{5}'
-syn match logFilePath   '\<\w:\\[^\n|,; ()'"\]{}]\+'
-syn match logFilePath   '[^a-zA-Z0-9"']\@<=\/\w[^\n|,; ()'"\]{}]\+'
+syn match logMacAddress '\<\([0-9a-fA-F]\{2}:\)\{5}[0-9a-fA-F]\{2}\>'
 
-
-" Syslog Columns
+" SysLog (systemd and traditional syslog)
 "---------------------------------------------------------------------------
-" Syslog hostname, program and process number columns
+syn match logSyslogLine '^.*\[\d\+\]:' contains=logDate,logTime
+syn match logSyslogHostname '.*:' contained nextgroup=logSyslogMessage
+syn match logSyslogMessage '\w.*' contained
+
+" Syslog Columns (hostname, program and process number)
+"---------------------------------------------------------------------------
+" Matches: hostname program[pid]: or hostname program:
 syn match logSysColumns '\w\(\w\|\.\|-\)\+ \(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logSysProcess contained
 syn match logSysProcess '\(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logNumber,logBrackets contained
 
-
-" XML Tags
+" XML Tags (simplified)
 "---------------------------------------------------------------------------
-" Simplified matches, not accurate with the spec to avoid false positives
-syn match logXmlHeader       /<?\(\w\|-\)\+\(\s\+\w\+\(="[^"]*"\|='[^']*'\)\?\)*?>/ contains=logString,logXmlAttribute,logXmlNamespace
-syn match logXmlDoctype      /<!DOCTYPE[^>]*>/ contains=logString,logXmlAttribute,logXmlNamespace
-syn match logXmlTag          /<\/\?\(\(\w\|-\)\+:\)\?\(\w\|-\)\+\(\(\n\|\s\)\+\(\(\w\|-\)\+:\)\?\(\w\|-\)\+\(="[^"]*"\|='[^']*'\)\?\)*\s*\/\?>/ contains=logString,logXmlAttribute,logXmlNamespace
-syn match logXmlAttribute    contained "\w\+=" contains=logOperator
-syn match logXmlAttribute    contained "\(\n\|\s\)\(\(\w\|-\)\+:\)\?\(\w\|-\)\+\(=\)\?" contains=logXmlNamespace,logOperator
-syn match logXmlNamespace    contained "\(\w\|-\)\+:" contains=logOperator
-syn region logXmlComment     start=/<!--/ end=/-->/
-syn match logXmlCData        /<!\[CDATA\[.*\]\]>/
-syn match logXmlEntity       /&#\?\w\+;/
+syn match logXMLTag '<[^>]*>' contains=NONE
 
-
-" Levels
+" Strings in quotes
 "---------------------------------------------------------------------------
-syn keyword logLevelEmergency EMERGENCY EMERG
-syn keyword logLevelAlert ALERT
-syn keyword logLevelCritical CRITICAL CRIT FATAL
-syn keyword logLevelError ERROR ERR FAILURE SEVERE
-syn keyword logLevelWarning WARNING WARN
-syn keyword logLevelNotice NOTICE
-syn keyword logLevelInfo INFO
-syn keyword logLevelDebug DEBUG FINE
-syn keyword logLevelTrace TRACE FINER FINEST
+syn region logString start=+'+ end=+'+ skip=+\\'+ contains=NONE
+syn region logString start=+"+ end=+"+ skip=+\\"+ contains=NONE
 
-
-" Highlight links
+" Error and exception keywords (context highlighting)
 "---------------------------------------------------------------------------
+syn keyword logException Exception Throwable Caused Caused\ by
+
+" Highlighting definitions
+"---------------------------------------------------------------------------
+hi def link logLevelError ErrorMsg
+hi def link logLevelWarn WarningMsg
+hi def link logLevelInfo Normal
+hi def link logLevelDebug Function
+hi def link logLevelTrace Comment
+hi def link logLevelEmerg ErrorMsg
+hi def link logLevelAlert ErrorMsg
+hi def link logLevelCrit ErrorMsg
+hi def link logLevelErr WarningMsg
+hi def link logLevelWarn WarningMsg
+hi def link logLevelNotice Normal
+hi def link logLevelInfo Normal
+hi def link logLevelDebug Function
+hi def link logIPV6 Identifier
+hi def link logIpv4 Identifier
+hi def link logMacAddress Identifier
+hi def link logUrl Underlined
+hi def link logFilePath Underlined
+hi def link logOperator Normal
+hi def link logBrackets Normal
 hi def link logNumber Number
 hi def link logHexNumber Number
-hi def link logBinaryNumber Number
-hi def link logFloatNumber Float
 hi def link logBoolean Boolean
-hi def link logNull Constant
-hi def link logString String
-
-hi def link logDate Identifier
-hi def link logDateDay Identifier
 hi def link logTime Function
-hi def link logTimeZone Identifier
-
-hi def link logUrl Underlined
-hi def link logDomain Label
-hi def link logUUID Label
-hi def link logMD5 Label
-hi def link logIPV4 Label
-hi def link logIPV6 ErrorMsg
-hi def link logMacAddress Label
-hi def link logFilePath Conditional
-
+hi def link logDate Identifier
+hi def link logSyslogLine Normal
 hi def link logSysColumns Conditional
 hi def link logSysProcess Include
-
-hi def link logXmlHeader Function
-hi def link logXmlDoctype Function
-hi def link logXmlTag Identifier
-hi def link logXmlAttribute Type
-hi def link logXmlNamespace Include
-hi def link logXmlComment Comment
-hi def link logXmlCData String
-hi def link logXmlEntity Special
-
-hi def link logOperator Operator
-hi def link logBrackets Comment
-hi def link logEmptyLines Comment
-
-hi def link logLevelEmergency ErrorMsg
-hi def link logLevelAlert ErrorMsg
-hi def link logLevelCritical ErrorMsg
-hi def link logLevelError ErrorMsg
-hi def link logLevelWarning WarningMsg
-hi def link logLevelNotice Character
-hi def link logLevelInfo Repeat
-hi def link logLevelDebug Debug
-hi def link logLevelTrace Comment
+hi def link logSyslogHostname Identifier
+hi def link logSyslogMessage Normal
+hi def link logXMLTag Function
+hi def link logString String
+hi def link logException ErrorMsg
+hi def link logEmptyLines Normal
 
 
+" Syntax synchronization
+"---------------------------------------------------------------------------
+" Force sync from file start to prevent mis-highlighting in large files
+syn sync minlines=500
 
 let b:current_syntax = 'log'
 
 let &cpoptions = s:cpo_save
 unlet s:cpo_save
-
