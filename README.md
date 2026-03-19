@@ -29,7 +29,19 @@ Add `Plugin 'mtdl9/vim-log-highlighting'` to your `~/.vimrc` and run `PluginInst
 
 ### [Pathogen](https://github.com/tpope/vim-pathogen)
 
-    $ git clone https://github.com/mtdl9/vim-log-highlighting ~/.vim/bundle/vim-log-highlighting
+    $ git clone https://github.com/FelixDai/vim-log-highlighting ~/.vim/bundle/vim-log-highlighting
+
+### Vim8+ Package (Native)
+
+Vim 8.0+ supports native package management without requiring any plugin manager:
+
+    $ mkdir -p ~/.vim/pack/syntax/start
+    $ git clone https://github.com/FelixDai/vim-log-highlighting ~/.vim/pack/syntax/start/vim-log-highlighting
+
+Or for an optional/on-demand package (loaded manually with `:packadd log-highlighting`):
+
+    $ mkdir -p ~/.vim/pack/syntax/opt
+    $ git clone https://github.com/FelixDai/vim-log-highlighting ~/.vim/pack/syntax/opt/vim-log-highlighting
 
 ### Manual Install
 
