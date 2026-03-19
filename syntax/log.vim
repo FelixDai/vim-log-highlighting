@@ -183,8 +183,9 @@ syn match logXMLTag '<[^>]*>' contains=NONE
 
 " Strings in quotes
 "---------------------------------------------------------------------------
-syn region logString start=+'+ end=+'+ skip=+\\'+ contains=NONE
-syn region logString start=+"+ end=+"+ skip=+\\"+ contains=NONE
+" Avoid matching contractions like can't, won't by requiring whitespace or start-of-line before quote
+syn region logString start=+\%(\s\|^\)\@<='+ end=+'+ skip=+\\'+ contains=NONE
+syn region logString start=+\%(\s\|^\)\@<="+ end=+"+ skip=+\\"+ contains=NONE
 
 " Error and exception keywords (context highlighting)
 "---------------------------------------------------------------------------
