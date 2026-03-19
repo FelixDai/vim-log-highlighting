@@ -54,7 +54,7 @@ Or for an optional/on-demand package (loaded manually with `:packadd log-highlig
 
 ### Manual Install
 
-Copy the contents of the `ftdetect` and `syntax` folders in their respective ~/.vim/\* counterparts.
+Copy the contents of the `ftdetect` and `syntax` folders in their respective `~/.vim/*` counterparts.
 
 
 
@@ -81,7 +81,8 @@ au rc Syntax log syn clear logUrl
 
 ## Related Projects
 
-* VIM Built-in /var/log/messages highlighting
+* VIM Built-in `/var/log/messages` highlighting
+* [MTDL9/vim-log-highlighting](https://github.com/MTDL9/vim-log-highlighting) - Original project (forked from)
 * [vim-log-syntax](https://github.com/dzeban/vim-log-syntax) by dzeban
 * [vim-log4j](https://github.com/tetsuo13/Vim-log4j) by tetsuo13
 * [ccze](https://github.com/cornet/ccze) by cornet
