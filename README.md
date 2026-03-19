@@ -7,13 +7,22 @@
 Provides syntax highlighting for generic log files in VIM.
 
 Some of the highlighted elements are:
-- Dates and times
-- Common log level keywords like ERROR, INFO, DEBUG
-- Numbers, booleans and strings
-- URLs and file paths
-- IP and MAC addresses
-- SysLog format columns
-- XML Tags
+- **Dates and times**: `2026-03-19`, `12/03/2026`, `19/Mar/2026`, `14:32:05`, `00:03:38.129Z`
+- **Common log level keywords**: `ERROR`, `FATAL`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `EMERG`, `CRIT`
+- **Numbers**: integers (`1234`), floats (`3.14`), hex (`0x1A2B`)
+- **Booleans and strings**: `true`, `false`, `enabled`, `"quoted text"`, `'single quotes'`
+- **URLs and file paths**:
+  - URLs: `https://example.com/path`, `file://local/file`
+  - Absolute paths: `/var/log/messages`, `/home/user/.ssh`
+  - Relative paths: `package/base-files/clean`, `var/log/app.log`
+  - With prefixes: `./scripts/test.sh`, `../config/file`, `~/.vimrc`
+- **IP and MAC addresses**:
+  - IPv4: `192.168.1.1`, `10.0.0.1`
+  - IPv6: `2001:db8::1`, `::1`, `fe80::1/64`
+  - MAC: `00:1A:2B:3C:4D:5E`
+- **SysLog format columns**: hostname, program name, process ID
+- **XML tags**: `<tag>`, `</closing>`, `<self-closed/>`
+- **Exception keywords**: `Exception`, `Throwable`, `Caused by`
 
 
 
