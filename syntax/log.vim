@@ -13,15 +13,20 @@ set cpoptions&vim
 " Performance note: For large log files (>3000 lines), consider adding this
 " to your ~/.vimrc to prevent syntax highlighting timeout:
 "   autocmd FileType log setlocal redrawtime=10000
+"
+" For very large files (>100K lines), consider disabling syntax entirely:
+"   autocmd FileType log if line('$') > 100000 | setlocal nosyntax | endif
 
 
 " Operators
 "---------------------------------------------------------------------------
+" Use display flag to skip highlighting when not visible (performance)
 syn match logOperator display '[;,\?\.\<=\>\~\/\@\!$\%&\+\-\|\^(){}\*#]'
 syn match logBrackets display '[\[\]]'
-syn match logEmptyLines display '-\{3,}'
-syn match logEmptyLines display '\*\{3,}'
-syn match logEmptyLines display '=\{3,}'
+" Only match separator lines at start of line (performance: anchor reduces backtracking)
+syn match logEmptyLines display '^\s*-\{3,}\s*$'
+syn match logEmptyLines display '^\s*\*\{3,}\s*$'
+syn match logEmptyLines display '^\s*=\{3,}\s*$'
 
 " Numbers (integers and floats)
 "---------------------------------------------------------------------------
@@ -63,11 +68,11 @@ syn keyword logLevelDebug DEBUG
 
 " IPv4 plain addresses
 "---------------------------------------------------------------------------
-syn match logIpv4 '\<\d\{1,3}\.\d\{1,3}\.\d\{1,3}\.\d\{1,3}\>'
+syn match logIpv4 display '\<\d\{1,3}\.\d\{1,3}\.\d\{1,3}\.\d\{1,3}\>'
 
 " Pure IPv6 - Full 8-segment addresses (optionally followed by CIDR prefix /0-128)
 "---------------------------------------------------------------------------
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " Pure IPv6 - Compressed (all :: positions), sorted by total segment count (longest first)
 " CIDR prefix /0-128 supported on all patterns
@@ -77,109 +82,115 @@ syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,
 " 6 non-:: groups + :: (7-8 segments total)
 " ===========================================================================
 " a:b:c:d:e:f::g (8 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " a:b:c:d:e:f:: (7 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " ===========================================================================
 " 5 non-:: groups + :: (6-7 segments total)
 " ===========================================================================
 " a:b:c:d:e::f:g (7 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " a:b:c:d::e:f:g, a:b:c::d:e:f, a:b::c:d:e, a::b:c:d:e (6 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " ===========================================================================
 " 3 non-:: groups + :: (4-5 segments total)
 " ===========================================================================
 " a:b:c::d:e, a:b::c:d:e, a::b:c:d (4 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " a:b:c:: (4 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " ===========================================================================
 " :: at start with 7, 6, 5, 4, 3, 2, 1 groups after (8, 7, 6, 5, 4, 3, 2 segments)
 " ===========================================================================
 " ::a:b:c:d:e:f:g (8 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a:b:c:d:e:f (7 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a:b:c:d:e (6 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a:b:c:d (5 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a:b:c (4 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a:b (3 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " ::a (2 segments)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " :: (1 segment - just ::)
-syn match logIPV6 '\(^\|\s\|\[\)\@<=::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|\[\)\@<=::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " ===========================================================================
 " 2 non-:: groups + :: (3-4 segments total)
 " ===========================================================================
 " a:b::c:d:e, a:b::c:d (3 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " a:b:: (3 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 " ===========================================================================
 " 1 non-:: group + :: (2-3 segments total)
 " ===========================================================================
 " a::b:c:d, a::b:c (2 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::[0-9a-fA-F]\{1,4}:[0-9a-fA-F]\{1,4}\(\.[0-9]\)\@!\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 " a:: (2 segments)
-syn match logIPV6 '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
+syn match logIPV6 display '\(^\|\s\|[^:0-9a-fA-F]\)\@<=[0-9a-fA-F]\{1,4}::\(\/\d\{1,3}\)\?\([^:/0-9a-fA-F]\|$\)\@='
 
 
 " URLs and file paths
 "---------------------------------------------------------------------------
-syn match logUrl '\(https\?://\|ftps\?://\|file://\)[^ \t]*'
-syn match logFilePath display '\(\~\|/\)[^ \t]*'
+syn match logUrl display '\(https\?://\|ftps\?://\|file://\)[^ \t]*'
+" Match absolute paths (/var/log), relative paths (var/log/test.log, ./var/log, ../var/log), tilde paths (~/file), and URIs
+" Note: In Vim character classes, \w is not recognized - use [a-zA-Z0-9_] instead
+" Path must end with valid filename char: letter, digit, dot, underscore, hyphen (excludes ... sequences)
+" Absolute paths (must be before logOperator to prevent / hijacking)
+syn match logFilePath display '/[a-zA-Z0-9_][a-zA-Z0-9_.\-]*\%(/[.a-zA-Z0-9_][a-zA-Z0-9_.\-]*\)\+[a-zA-Z0-9_.\-]' contains=NONE
+" Relative paths and tilde paths (allow dotfiles with [.a-zA-Z0-9_] for path segment start)
+syn match logFilePath display '\(\~\|\.\.\|\.\|[a-zA-Z0-9_]\+\)\%(/[.a-zA-Z0-9_][a-zA-Z0-9_.\-]*\)\+[a-zA-Z0-9_.\-]' contains=NONE
 
 " Dates (must be after logNumber to match date patterns first)
 "---------------------------------------------------------------------------
 " Matches 2018-03-12 or 12/03/2018 or 12/Mar/2018
-syn match logDate '\d\{2,4}[-\/]\(\d\{2}\|Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\)[-\/]\d\{2,4}T\?'
+syn match logDate display '\d\{2,4}[-\/]\(\d\{2}\|Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\)[-\/]\d\{2,4}T\?'
 " Matches 8 digit numbers at start of line starting with 20 (e.g., 20260227)
-syn match logDate '^20\d\{6}'
+syn match logDate display '^20\d\{6}'
 
 " Times (HH:MM:SS)
 "---------------------------------------------------------------------------
 " Matches 12:09:38 or 00:03:38.129Z or 01:32:12.102938 +0700
-syn match logTime '\d\{2}:\d\{2}:\d\{2}\(\.\d\{2,6}\)\?\(\s\?[-+]\d\{2,4}\|Z\)\?\>' nextgroup=logTimeZone,logSysColumns skipwhite
+syn match logTime display '\d\{2}:\d\{2}:\d\{2}\(\.\d\{2,6}\)\?\(\s\?[-+]\d\{2,4}\|Z\)\?\>' nextgroup=logTimeZone,logSysColumns skipwhite
 
 " Time Zone (follows logTime)
-syn match logTimeZone '[A-Z]\{2,5}\>\( \d\{4}\)\?' contained
-syn match logTimeZone '\d\{4} [A-Z]\{2,5}\>' contained
+syn match logTimeZone display '[A-Z]\{2,5\}\>\( \d\{4\}\)\?' contained
+syn match logTimeZone display '\d\{4} [A-Z]\{2,5\}\>' contained
 
 " MAC addresses (defined after logTime so MAC wins over time on a full 6-group match)
 "---------------------------------------------------------------------------
-syn match logMacAddress '\<\([0-9a-fA-F]\{2}:\)\{5}[0-9a-fA-F]\{2}\>'
+syn match logMacAddress display '\<\([0-9a-fA-F]\{2}:\)\{5}[0-9a-fA-F]\{2}\>'
 
 " SysLog (systemd and traditional syslog)
 "---------------------------------------------------------------------------
-syn match logSyslogLine '^.*\[\d\+\]:' contains=logDate,logTime
+syn match logSyslogLine display '^.*\[\d\+\]:' contains=logDate,logTime
 syn match logSyslogHostname '.*:' contained nextgroup=logSyslogMessage
 syn match logSyslogMessage '\w.*' contained
 
 " Syslog Columns (hostname, program and process number)
 "---------------------------------------------------------------------------
 " Matches: hostname program[pid]: or hostname program:
-syn match logSysColumns '\w\(\w\|\.\|-\)\+ \(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logSysProcess contained
-syn match logSysProcess '\(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logNumber,logBrackets contained
+syn match logSysColumns display '\w\(\w\|\.\|-\)\+ \(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logSysProcess contained
+syn match logSysProcess display '\(\w\|\.\|-\)\+\(\[\d\+\]\)\?:' contains=logOperator,logNumber,logBrackets contained
 
 " XML Tags (simplified)
 "---------------------------------------------------------------------------
-syn match logXMLTag '<[^>]*>' contains=NONE
+syn match logXMLTag display '<[^>]*>' contains=NONE
 
 " Strings in quotes
 "---------------------------------------------------------------------------
@@ -231,8 +242,9 @@ hi def link logEmptyLines Normal
 
 " Syntax synchronization
 "---------------------------------------------------------------------------
-" Force sync from file start to prevent mis-highlighting in large files
-syn sync minlines=500
+" Reduced from 500 to 100 for better performance on large files
+" Most log patterns don't need long sync distance
+syn sync minlines=100
 
 let b:current_syntax = 'log'
 
